@@ -1,9 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _prepararCSRF();
   runApp(const MyApp());
+}
+
+Future<void> _prepararCSRF() async {
+  try {
+    final uri = Uri.parse('https://ledsupwebserver.onrender.com/csrf/');
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final setCookie = response.headers['set-cookie'];
+      if (setCookie != null) {
+        final csrf = _extraerCSRF(setCookie);
+        if (csrf != null) {
+          final cookieManager = CookieManager.instance();
+          await cookieManager.setCookie(
+            url: WebUri(uri.toString()), // 👈 importante
+            name: 'csrftoken',
+            value: csrf,
+            domain: 'ledsupwebserver.onrender.com',
+            path: '/',
+            isSecure: true,
+          );
+        }
+      }
+    }
+  } catch (e) {
+    debugPrint('Error al preparar CSRF: $e');
+  }
+}
+
+String? _extraerCSRF(String rawCookies) {
+  final match = RegExp(r'csrftoken=([^;]+)').firstMatch(rawCookies);
+  return match?.group(1);
 }
 
 class MyApp extends StatelessWidget {
@@ -37,7 +72,10 @@ class _WebViewPageState extends State<WebViewPage> {
         children: [
           InAppWebView(
             initialUrlRequest: URLRequest(
-              url: WebUri('https://192.168.0.40:8000'),
+              url: WebUri('https://ledsupwebserver.onrender.com/'),
+              headers: {
+                "Referer": "https://ledsupwebserver.onrender.com/"
+              },
             ),
             initialSettings: InAppWebViewSettings(
               javaScriptEnabled: true,
@@ -66,10 +104,8 @@ class _WebViewPageState extends State<WebViewPage> {
               });
               debugPrint('Carga terminada: $url');
             },
-            onReceivedError: (controller, request, error)  {
-              debugPrint(
-                'Error carga: ${error.toString()}'
-              );
+            onReceivedError: (controller, request, error) {
+              debugPrint('Error carga: ${error.toString()}');
             },
             onProgressChanged: (controller, progress) {
               setState(() {
@@ -80,7 +116,6 @@ class _WebViewPageState extends State<WebViewPage> {
               debugPrint('Console: ${consoleMessage.message}');
             },
             onReceivedServerTrustAuthRequest: (controller, challenge) async {
-              // Ignorar errores SSL (solo desarrollo)
               return ServerTrustAuthResponse(
                 action: ServerTrustAuthResponseAction.PROCEED,
               );

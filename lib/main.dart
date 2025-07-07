@@ -9,9 +9,7 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      // o Colors.black si quieres negro sólido
       statusBarIconBrightness: Brightness.light,
-      // iconos blancos
       statusBarBrightness: Brightness.dark,
     ),
   );
@@ -66,7 +64,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class WebViewPage extends StatefulWidget {
   const WebViewPage({super.key});
 
@@ -82,9 +79,7 @@ class _WebViewPageState extends State<WebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final padding = MediaQuery
-        .of(context)
-        .padding;
+    final padding = MediaQuery.of(context).padding;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -99,80 +94,82 @@ class _WebViewPageState extends State<WebViewPage> {
               Expanded(
                 child: Stack(
                   children: [
-                    InAppWebView(
-                      initialUrlRequest: URLRequest(
-                        url: WebUri('https://ledsupwebserver.onrender.com/'),
-                        headers: {
-                          "Referer": "https://ledsupwebserver.onrender.com/",
+                    if (!_hasError)
+                      InAppWebView(
+                        initialUrlRequest: URLRequest(
+                          url: WebUri('https://ledsupwebserver.onrender.com/'),
+                          headers: {
+                            "Referer": "https://ledsupwebserver.onrender.com/",
+                          },
+                        ),
+                        initialSettings: InAppWebViewSettings(
+                          javaScriptEnabled: true,
+                          useOnDownloadStart: true,
+                          mediaPlaybackRequiresUserGesture: false,
+                          clearCache: true,
+                          supportZoom: true,
+                          useWideViewPort: true,
+                          builtInZoomControls: true,
+                          displayZoomControls: false,
+                          mixedContentMode:
+                              MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                          allowsInlineMediaPlayback: true,
+                        ),
+                        onWebViewCreated: (controller) {
+                          _controller = controller;
+                        },
+                        onLoadStart: (controller, url) {
+                          setState(() {
+                            _isLoading = true;
+                            _hasError = false;
+                          });
+                        },
+                        onLoadStop: (controller, url) {
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        },
+                        onReceivedError: (controller, request, error) {
+                          debugPrint('Error carga: ${error.toString()}');
+                          setState(() {
+                            _isLoading = false;
+                            _hasError = true;
+                          });
+                        },
+                        onProgressChanged: (controller, progress) {
+                          setState(() {
+                            _progress = progress / 100;
+                          });
+                        },
+                        onConsoleMessage: (controller, consoleMessage) {
+                          debugPrint('Console: ${consoleMessage.message}');
+                        },
+                        onReceivedServerTrustAuthRequest:
+                            (controller, challenge) async {
+                          return ServerTrustAuthResponse(
+                            action: ServerTrustAuthResponseAction.PROCEED,
+                          );
                         },
                       ),
-                      initialSettings: InAppWebViewSettings(
-                        javaScriptEnabled: true,
-                        useOnDownloadStart: true,
-                        mediaPlaybackRequiresUserGesture: false,
-                        clearCache: true,
-                        supportZoom: true,
-                        useWideViewPort: true,
-                        builtInZoomControls: true,
-                        displayZoomControls: false,
-                        mixedContentMode:
-                        MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
-                        allowsInlineMediaPlayback: true,
-                      ),
-                      onWebViewCreated: (controller) {
-                        _controller = controller;
-                      },
-                      onLoadStart: (controller, url) {
-                        setState(() {
-                          _isLoading = true;
-                          _hasError = false;
-                        });
-                      },
-                      onLoadStop: (controller, url) {
-                        setState(() {
-                          _isLoading = false;
-                        });
-                      },
-                      onReceivedError: (controller, request, error) {
-                        debugPrint('Error carga: ${error.toString()}');
-                        setState(() {
-                          _isLoading = false;
-                          _hasError = true;
-                        });
-                      },
-                      onProgressChanged: (controller, progress) {
-                        setState(() {
-                          _progress = progress / 100;
-                        });
-                      },
-                      onConsoleMessage: (controller, consoleMessage) {
-                        debugPrint('Console: ${consoleMessage.message}');
-                      },
-                      onReceivedServerTrustAuthRequest:
-                          (controller, challenge) async {
-                        return ServerTrustAuthResponse(
-                          action: ServerTrustAuthResponseAction.PROCEED,
-                        );
-                      },
-                    ),
 
                     // Loader
                     if (_isLoading && !_hasError)
-                      Center(
-                          child: CircularProgressIndicator(value: _progress)),
+                      Center(child: CircularProgressIndicator(value: _progress)),
 
-                    // Error
+                    // Error personalizado
                     if (_hasError)
                       Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Image.asset('assets/error_icon.png', width: 100), // si querés
+                            const Icon(Icons.cloud_off, size: 90, color: Colors.grey),
+                            const SizedBox(height: 20),
                             const Text(
-                              'No se pudo cargar la página',
-                              style: TextStyle(fontSize: 16),
+                              '¡Ups!\nNo se pudo conectar con el servidor.\n¿Está dormido? Esperá un momento y tocá "Reintentar".',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 18, color: Colors.grey),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 20),
                             ElevatedButton(
                               onPressed: () {
                                 setState(() {
@@ -196,4 +193,3 @@ class _WebViewPageState extends State<WebViewPage> {
     );
   }
 }
-

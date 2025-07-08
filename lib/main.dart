@@ -165,7 +165,7 @@ class _WebViewPageState extends State<WebViewPage> {
                             const Icon(Icons.cloud_off, size: 90, color: Colors.grey),
                             const SizedBox(height: 20),
                             const Text(
-                              '¡Ups!\nNo se pudo conectar con el servidor.\n¿Está dormido? Esperá un momento y tocá "Reintentar".',
+                              '¡Ups!\nNo se pudo conectar con el servidor.\nEsperá un momento y tocá "Reintentar".',
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 18, color: Colors.grey),
                             ),

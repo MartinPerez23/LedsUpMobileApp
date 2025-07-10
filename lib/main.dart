@@ -77,119 +77,137 @@ class _WebViewPageState extends State<WebViewPage> {
   double _progress = 0;
   bool _hasError = false;
 
+  final String homeUrl = 'https://ledsupwebserver.onrender.com/';
+
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.of(context).padding;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
-      child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Stack(
-                  children: [
-                    if (!_hasError)
-                      InAppWebView(
-                        initialUrlRequest: URLRequest(
-                          url: WebUri('https://ledsupwebserver.onrender.com/'),
-                          headers: {
-                            "Referer": "https://ledsupwebserver.onrender.com/",
+    return WillPopScope(
+      onWillPop: _handleBackNavigation,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
+        child: Scaffold(
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    children: [
+                      if (!_hasError)
+                        InAppWebView(
+                          initialUrlRequest: URLRequest(
+                            url: WebUri(homeUrl),
+                            headers: {
+                              "Referer": homeUrl,
+                            },
+                          ),
+                          initialSettings: InAppWebViewSettings(
+                            javaScriptEnabled: true,
+                            useOnDownloadStart: true,
+                            mediaPlaybackRequiresUserGesture: false,
+                            clearCache: true,
+                            supportZoom: true,
+                            useWideViewPort: true,
+                            builtInZoomControls: true,
+                            displayZoomControls: false,
+                            mixedContentMode:
+                            MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                            allowsInlineMediaPlayback: true,
+                          ),
+                          onWebViewCreated: (controller) {
+                            _controller = controller;
+                          },
+                          onLoadStart: (controller, url) {
+                            setState(() {
+                              _isLoading = true;
+                              _hasError = false;
+                            });
+                          },
+                          onLoadStop: (controller, url) {
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          },
+                          onReceivedError: (controller, request, error) {
+                            debugPrint('Error carga: ${error.toString()}');
+                            setState(() {
+                              _isLoading = false;
+                              _hasError = true;
+                            });
+                          },
+                          onProgressChanged: (controller, progress) {
+                            setState(() {
+                              _progress = progress / 100;
+                            });
+                          },
+                          onConsoleMessage: (controller, consoleMessage) {
+                            debugPrint('Console: ${consoleMessage.message}');
+                          },
+                          onReceivedServerTrustAuthRequest:
+                              (controller, challenge) async {
+                            return ServerTrustAuthResponse(
+                              action: ServerTrustAuthResponseAction.PROCEED,
+                            );
                           },
                         ),
-                        initialSettings: InAppWebViewSettings(
-                          javaScriptEnabled: true,
-                          useOnDownloadStart: true,
-                          mediaPlaybackRequiresUserGesture: false,
-                          clearCache: true,
-                          supportZoom: true,
-                          useWideViewPort: true,
-                          builtInZoomControls: true,
-                          displayZoomControls: false,
-                          mixedContentMode:
-                              MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
-                          allowsInlineMediaPlayback: true,
-                        ),
-                        onWebViewCreated: (controller) {
-                          _controller = controller;
-                        },
-                        onLoadStart: (controller, url) {
-                          setState(() {
-                            _isLoading = true;
-                            _hasError = false;
-                          });
-                        },
-                        onLoadStop: (controller, url) {
-                          setState(() {
-                            _isLoading = false;
-                          });
-                        },
-                        onReceivedError: (controller, request, error) {
-                          debugPrint('Error carga: ${error.toString()}');
-                          setState(() {
-                            _isLoading = false;
-                            _hasError = true;
-                          });
-                        },
-                        onProgressChanged: (controller, progress) {
-                          setState(() {
-                            _progress = progress / 100;
-                          });
-                        },
-                        onConsoleMessage: (controller, consoleMessage) {
-                          debugPrint('Console: ${consoleMessage.message}');
-                        },
-                        onReceivedServerTrustAuthRequest:
-                            (controller, challenge) async {
-                          return ServerTrustAuthResponse(
-                            action: ServerTrustAuthResponseAction.PROCEED,
-                          );
-                        },
-                      ),
 
-                    // Loader
-                    if (_isLoading && !_hasError)
-                      Center(child: CircularProgressIndicator(value: _progress)),
+                      if (_isLoading && !_hasError)
+                        Center(
+                            child: CircularProgressIndicator(value: _progress)),
 
-                    // Error personalizado
-                    if (_hasError)
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.cloud_off, size: 90, color: Colors.grey),
-                            const SizedBox(height: 20),
-                            const Text(
-                              '¡Ups!\nNo se pudo conectar con el servidor.\nEsperá un momento y tocá "Reintentar".',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 18, color: Colors.grey),
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _hasError = false;
-                                  _isLoading = true;
-                                });
-                                _controller.reload();
-                              },
-                              child: const Text('Reintentar'),
-                            ),
-                          ],
+                      if (_hasError)
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.cloud_off, size: 90,
+                                  color: Colors.grey),
+                              const SizedBox(height: 20),
+                              const Text(
+                                '¡Ups!\nNo se pudo conectar con el servidor.\nEsperá un momento y tocá "Reintentar".',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _hasError = false;
+                                    _isLoading = true;
+                                  });
+                                  _controller.reload();
+                                },
+                                child: const Text('Reintentar'),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<bool> _handleBackNavigation() async {
+    final currentUrl = (await _controller.getUrl())?.toString() ?? '';
+    final canGoBack = await _controller.canGoBack();
+
+    if (canGoBack && currentUrl != homeUrl && currentUrl != '$homeUrl/') {
+      _controller.goBack();
+      return false;
+    }
+
+    return true;
   }
 }

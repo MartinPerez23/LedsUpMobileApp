@@ -3,7 +3,7 @@ name: Build Flutter APK
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build:
@@ -24,6 +24,9 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
+      - name: Rename APK to LedsUp.apk
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/LedsUp.apk
+
       - name: Upload APK to release
         uses: softprops/action-gh-release@v1
         with:
@@ -32,3 +35,4 @@ jobs:
           files: build/app/outputs/flutter-apk/LedsUp.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

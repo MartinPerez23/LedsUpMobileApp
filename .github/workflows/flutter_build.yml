@@ -29,6 +29,6 @@ jobs:
         with:
           name: latest
           tag_name: latest
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: build/app/outputs/flutter-apk/LedsUp.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
